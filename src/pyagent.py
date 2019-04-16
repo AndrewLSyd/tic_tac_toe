@@ -1,7 +1,11 @@
 #!/usr/bin/python3
-# Sample starter bot by Zac Partrige
-# 06/04/19
-# Feel free to use this and modify it however you wish
+# Have used start code from by Zac Partrige
+# Step 1: Setting up the board object
+# Step 2: Trying a pure Monte Carlo Search
+# Step 3: Trying MiniMax
+# Step 4: Trying MiniMax with Alpha Beta pruning
+# Step 5: Trying Monte Carlo Tree Search
+
 
 import socket
 import sys
@@ -76,7 +80,8 @@ class TTTBoard:
                 np.array([self._board[board, 3], self._board[board, 5], self._board[board, 7]])]
 
     def get_board_pos(self, board, position):
-        """ gets the value stored at a board position [1, 9], [1, 9] """
+        """ input: [1, 9], [1, 9]
+        returns the value stored at a board position """
         return self._board[board, position]
 
     def get_curr_board(self):
@@ -181,15 +186,13 @@ def mc_trial(board, verbose=False):
 
     # scoring
     if outcome == 1:  # player wins
-        score = 2
+        score = 1
     elif outcome == 2:  # opponent wins
-        score = -2
+        score = -1
     else:
         score = 0  # draw
-
     if verbose:
         print(board)
-
     return score
 
 
@@ -260,7 +263,7 @@ def count_players_pieces(array, player):
     return count
 
 
-def heur_twos(board, full_output=False):
+def heur_twos(board):
     """ heuristic which attempts to maximise number of twos
     counts number of boards with twos """
     twos_player = [0, 0]
@@ -283,17 +286,17 @@ def heur_twos(board, full_output=False):
 
     heuristic = twos_player[0] - twos_player[1]
 
-    if full_output:
-        return [twos_player, heuristic]
     return heuristic
+
 
 def heur_my_strat(board):
     """ strategy that involves going for 2 in a row/col/diagonal whilst preferring
     centre pieces then corners """
     return 10 * heur_twos(board) + 2 * heur_centre(board) + heur_corners(board)
 
+
 # choose a move to play
-def final_heuristic(board, heuristic=heur_my_strat):
+def final_heuristic(board, heuristic=heur_twos):
     """ returns heuristic estimate of position value from player 1s POV """
     if board.check_win() == 1:
         return 1_000_000 - board.get_num_turns()
@@ -302,6 +305,9 @@ def final_heuristic(board, heuristic=heur_my_strat):
     else:
         return heuristic(board)
 
+###########################################################################
+#                              MINIMAX                                    #
+###########################################################################
 
 def minimax(board, depth=3, verbose=False):
     """ minimax without ab pruning. can only seem to get depth 3 with this. """
@@ -325,39 +331,35 @@ def minimax(board, depth=3, verbose=False):
         return beta
 
 
+nodes_explored = 0
+
 def minimax_ab(board, alpha=-float("inf"), beta=float("inf"), depth=4):
     """ minimax WITH ab pruning. Can get at least depth 4 with pruning"""
+    global nodes_explored
     if board.check_win() or depth == 0:
         return final_heuristic(board)
     if board.get_players_turn() == 1:
         for child in board.get_child_boards():
+            nodes_explored += 1
             alpha = max(alpha, minimax_ab(child, alpha, beta, depth - 1))
+            # print("DEPTH:", depth, "ALPHA:", alpha)
             if alpha >= beta:
                 return alpha
         return alpha
     if board.get_players_turn() == 2:
         for child in board.get_child_boards():
+            nodes_explored += 1
             beta = min(beta, minimax_ab(child, alpha, beta, depth - 1))
+            # print("DEPTH:", depth, "BETA:", beta)
             if beta <= alpha:
                 return beta
         return beta
 
 
-# def play():
-#     """ what this does"""
-#     # move = game_board.get_rand_legal_move()
-#     mc = pure_MC(game_board, N_TRIALS * math.ceil((1 + game_board.get_num_turns()) ** DEPTH_FACTOR))
-#     move = mc[1]
-#     print("number of sims:", str(math.ceil(N_TRIALS * (1 + game_board.get_num_turns()) ** DEPTH_FACTOR)))
-#     print("top moves:", mc[0])
-#     print("my move: board -", game_board.get_curr_board(), "position:", str(move))
-#     game_board.place(game_board._current_board, move, 1)
-#     print(game_board)
-#     return move
-
-
 def play(agent=minimax_ab):
-    """ what this does """
+    """ takes an agent and finds the returns the best move """
+    global nodes_explored
+    nodes_explored = 0
     move_values = [ILLEGAL_MOVE] * 9  # illegal moves set to arbitrarily low number
     print('legal moves', game_board.get_legal_moves())
     # find value of all moves
@@ -367,14 +369,16 @@ def play(agent=minimax_ab):
         if agent is minimax_ab:
             if game_board.get_num_turns() < 20:
                 minimax_ab_depth = 4
-            elif game_board.get_num_turns() < 35:
+            elif game_board.get_num_turns() < 30:
                 minimax_ab_depth = 5
+            elif game_board.get_num_turns() < 35:
+                minimax_ab_depth = 6
+            elif game_board.get_num_turns() < 38:
+                minimax_ab_depth = 6
             elif game_board.get_num_turns() < 40:
                 minimax_ab_depth = 6
-            elif game_board.get_num_turns() < 45:
-                minimax_ab_depth = 7
             else:
-                minimax_ab_depth = 8
+                minimax_ab_depth = 7
             # agent plays here and returns score of all moves
             move_values[move - 1] = agent(board_clone, depth=minimax_ab_depth)
         else:
@@ -401,6 +405,138 @@ def play(agent=minimax_ab):
     return move
 
 
+###########################################################################
+#                       MONTE CARLO TREE SEARCH                           #
+###########################################################################
+class Node:
+    """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
+        Crashes if state not specified.
+    """
+
+    def __init__(self, move=None, parent=None, state=None):
+        self.move = move  # the move that got us to this node - "None" for the root node
+        self.parentNode = parent  # "None" for the root node
+        self.childNodes = []
+        self.wins = 0
+        self.visits = 0
+        self.untriedMoves = state.GetMoves()  # future child nodes
+        self.playerJustMoved = state.playerJustMoved  # the only part of the state that the Node needs later
+
+    def UCTSelectChild(self):
+        """ Use the UCB1 formula to select a child node. Often a constant UCTK is applied so we have
+            lambda c: c.wins/c.visits + UCTK * sqrt(2*log(self.visits)/c.visits to vary the amount of
+            exploration versus exploitation.
+        """
+        s = sorted(self.childNodes, key=lambda c: c.wins / c.visits + sqrt(2 * log(self.visits) / c.visits))[-1]
+        return s
+
+    def AddChild(self, m, s):
+        """ Remove m from untriedMoves and add a new child node for this move.
+            Return the added child node
+        """
+        n = Node(move=m, parent=self, state=s)
+        self.untriedMoves.remove(m)
+        self.childNodes.append(n)
+        return n
+
+    def Update(self, result):
+        """ Update this node - one additional visit and result additional wins. result must be from the viewpoint of playerJustmoved.
+        """
+        self.visits += 1
+        self.wins += result
+
+    def __repr__(self):
+        return "[M:" + str(self.move) + " W/V:" + str(self.wins) + "/" + str(self.visits) + " U:" + str(
+            self.untriedMoves) + "]"
+
+    def TreeToString(self, indent):
+        s = self.IndentString(indent) + str(self)
+        for c in self.childNodes:
+            s += c.TreeToString(indent + 1)
+        return s
+
+    def IndentString(self, indent):
+        s = "\n"
+        for i in range(1, indent + 1):
+            s += "| "
+        return s
+
+    def ChildrenToString(self):
+        s = ""
+        for c in self.childNodes:
+            s += str(c) + "\n"
+        return s
+
+
+def UCT(rootstate, itermax, verbose=False):
+    """ Conduct a UCT search for itermax iterations starting from rootstate.
+        Return the best move from the rootstate.
+        Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
+
+    rootnode = Node(state=rootstate)
+
+    for i in range(itermax):
+        node = rootnode
+        state = rootstate.Clone()
+
+        # Select
+        while node.untriedMoves == [] and node.childNodes != []:  # node is fully expanded and non-terminal
+            node = node.UCTSelectChild()
+            state.DoMove(node.move)
+
+        # Expand
+        if node.untriedMoves != []:  # if we can expand (i.e. state/node is non-terminal)
+            m = random.choice(node.untriedMoves)
+            state.DoMove(m)
+            node = node.AddChild(m, state)  # add child and descend tree
+
+        # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
+        while state.GetMoves() != []:  # while state is non-terminal
+            state.DoMove(random.choice(state.GetMoves()))
+
+        # Backpropagate
+        while node != None:  # backpropagate from the expanded node and work back to the root node
+            node.Update(state.GetResult(
+                node.playerJustMoved))  # state is terminal. Update node with result from POV of node.playerJustMoved
+            node = node.parentNode
+
+    # Output some information about the tree - can be omitted
+    if (verbose): print
+    rootnode.TreeToString(0)
+    else: print
+    rootnode.ChildrenToString()
+
+    return sorted(rootnode.childNodes, key=lambda c: c.visits)[-1].move  # return the move that was most visited
+
+
+def UCTPlayGame():
+    """ Play a sample game between two UCT players where each player gets a different number
+        of UCT iterations (= simulations = tree nodes).
+    """
+    # state = OthelloState(4) # uncomment to play Othello on a square board of the given size
+    # state = OXOState() # uncomment to play OXO
+    state = NimState(15)  # uncomment to play Nim with the given number of starting chips
+    while (state.GetMoves() != []):
+        print
+        str(state)
+        if state.playerJustMoved == 1:
+            m = UCT(rootstate=state, itermax=1000, verbose=False)  # play with values for itermax and verbose = True
+        else:
+            m = UCT(rootstate=state, itermax=100, verbose=False)
+        print
+        "Best Move: " + str(m) + "\n"
+        state.DoMove(m)
+    if state.GetResult(state.playerJustMoved) == 1.0:
+        print
+        "Player " + str(state.playerJustMoved) + " wins!"
+    elif state.GetResult(state.playerJustMoved) == 0.0:
+        print
+        "Player " + str(3 - state.playerJustMoved) + " wins!"
+    else:
+        print
+    "Nobody wins!"
+
+
 # start game
 game_board = TTTBoard()
 
@@ -410,7 +546,7 @@ game_board = TTTBoard()
 # only parses the strings that are necessary
 def display_turn(board):
     print("*" * 20 + " move: " + str(board.get_num_turns()) + ", PLAYER " + str(board.get_players_turn()),
-          "*" * 20)
+          " nodes explored: ", nodes_explored, "*" * 20)
 
 
 def parse(string):
