@@ -1,49 +1,81 @@
 """
 test module for py
 """
-from pyagent import TTTBoard, mc_trial, pure_MC, final_heuristic, heur_twos, heur_centre
+from pyagent import TTTBoard, mc_trial, pure_MC, final_heuristic, heur_twos, heur_centre, UCT
+
 
 test_board = TTTBoard()
 
-test_board.place(1, 4, 1)
-test_board.place(1, 5, 1)
-test_board.place(1, 9, 2)
+def UCTPlayGame():
+    """ Play a sample game between two UCT players where each player gets a different number
+        of UCT iterations (= simulations = tree nodes).
+    """
+    state = test_board
+    while (state.GetMoves() != []):
+        if state.playerJustMoved == 1:
+            m = UCT(rootstate=state, itermax=1000, verbose=False)  # play with values for itermax and verbose = True
+        else:
+            m = UCT(rootstate=state, itermax=1000, verbose=False)
+        print("current board:", state.get_curr_board())
+        print("Best Move: " + str(m) + "\n")
+        state.DoMove(m)
+        print(state)
+    if state.GetResult(state.playerJustMoved) == 1.0:
+        print("Player " + str(state.playerJustMoved) + " wins!")
+    elif state.GetResult(state.playerJustMoved) == 0.0:
+        print("Player " + str(3 - state.playerJustMoved) + " wins!")
+    else:
+        print("Nobody wins!")
 
-test_board.place(2, 6, 1)
-
-test_board.place(2, 4, 2)
-
-test_board.place(3, 2, 1)
-test_board.place(3, 5, 1)
-
-test_board.place(4, 7, 1)
-test_board.place(4, 8, 1)
-test_board.place(4, 1, 2)
-test_board.place(4, 3, 2)
-
-test_board.place(5, 4, 1)
-test_board.place(5, 9, 1)
-test_board.place(5, 1, 2)
-test_board.place(5, 7, 2)
-
-test_board.place(6, 2, 2)
-test_board.place(6, 5, 2)
-
-test_board.place(7, 1, 1)
-test_board.place(7, 2, 1)
-test_board.place(7, 8, 2)
-
-test_board.place(8, 9, 1)
-test_board.place(8, 4, 2)
-test_board.place(8, 7, 2)
+UCTPlayGame()
 
 
-test_board.place(9, 3, 2)
-test_board.place(9, 5, 2)
+
+
+
+
+
+test_board = TTTBoard()
+
+test_board.DoMove(board=1, num=4, player=1)
+test_board.DoMove(board=1, num=5, player=1)
+test_board.DoMove(board=1, num=9, player=2)
+
+test_board.DoMove(board=2, num=6, player=1)
+
+test_board.DoMove(board=2, num=4, player=2)
+
+test_board.DoMove(board=3, num=2, player=1)
+test_board.DoMove(board=3, num=5, player=1)
+
+test_board.DoMove(board=4, num=7, player=1)
+test_board.DoMove(board=4, num=8, player=1)
+test_board.DoMove(board=4, num=1, player=2)
+test_board.DoMove(board=4, num=3, player=2)
+
+test_board.DoMove(board=5, num=4, player=1)
+test_board.DoMove(board=5, num=9, player=1)
+test_board.DoMove(board=5, num=1, player=2)
+test_board.DoMove(board=5, num=7, player=2)
+
+test_board.DoMove(board=6, num=2, player=2)
+test_board.DoMove(board=6, num=5, player=2)
+
+test_board.DoMove(board=7, num=1, player=1)
+test_board.DoMove(board=7, num=2, player=1)
+test_board.DoMove(board=7, num=8, player=2)
+
+test_board.DoMove(board=8, num=9, player=1)
+test_board.DoMove(board=8, num=4, player=2)
+test_board.DoMove(board=8, num=7, player=2)
+
+
+test_board.DoMove(board=9, num=3, player=2)
+test_board.DoMove(board=9, num=5, player=2)
 print(test_board._players_turn)
-test_board.place(9, 8, 1)
+test_board.DoMove(board=9, num=8, player=1)
 print(test_board._players_turn)
-test_board.place(2, 1, 2)
+test_board.DoMove(board=2, num=1, player=2)
 print(test_board._players_turn)
 print(test_board)
 print(final_heuristic(test_board))
@@ -59,7 +91,7 @@ print("get cols")
 print(test_board.get_cols(2))
 
 
-test_board.place(test_board.get_curr_board(), 6)
+test_board.DoMove(test_board.get_curr_board(), 6)
 print(test_board)
 
 
@@ -72,26 +104,26 @@ print(test_board)
 # print(scores)
 #
 # test_board = TTTBoard()
-# test_board.place(1, 7, 2)
-# test_board.place(1, 8, 1)
+# test_board.DoMove(board=1, 7, player=2)
+# test_board.DoMove(board=1, 8, player=1)
 #
-# test_board.place(2, 1, 2)
+# test_board.DoMove(board=2, 1, player=2)
 #
-# test_board.place(3, 5, 1)
+# test_board.DoMove(board=3, 5, player=1)
 #
-# test_board.place(4, 3, 2)
+# test_board.DoMove(board=4, 3, player=2)
 #
-# test_board.place(5, 4, 1)
-# test_board.place(5, 8, 2)
+# test_board.DoMove(board=5, 4, player=1)
+# test_board.DoMove(board=5, 8, player=2)
 #
-# test_board.place(7, 8, 1)
+# test_board.DoMove(board=7, 8, player=1)
 #
-# test_board.place(8, 2, 1)
-# test_board.place(8, 5, 2)
-# test_board.place(8, 9, 2)
+# test_board.DoMove(board=8, 2, player=1)
+# test_board.DoMove(board=8, 5, player=2)
+# test_board.DoMove(board=8, 9, player=2)
 #
-# test_board.place(9, 5, 1)
-# test_board.place(5, 2, 2)
+# test_board.DoMove(board=9, 5, player=1)
+# test_board.DoMove(board=5, 2, player=2)
 #
 # print(test_board)
 #
@@ -107,53 +139,53 @@ def test_doctest_check_win():
     test_0: None\n
     Checking horizontal
     >>> test_board = TTTBoard()
-    >>> test_board.place(2,1,2)
-    >>> test_board.place(2,2,2)
-    >>> test_board.place(2,3,2)
+    >>> test_board.DoMove(board=2, num=1, player=2)
+    >>> test_board.DoMove(board=2, num=2, player=2)
+    >>> test_board.DoMove(board=2, num=3, player=2)
     >>> print("test_1:", test_board.check_win())
     test_1: 2\n
     >>> test_board = TTTBoard()
-    >>> test_board.place(1,4,2)
-    >>> test_board.place(1,5,2)
-    >>> test_board.place(1,6,2)
+    >>> test_board.DoMove(board=1, num=4, player=2)
+    >>> test_board.DoMove(board=1, num=5, player=2)
+    >>> test_board.DoMove(board=1, num=6, player=2)
     >>> print("test_2:", test_board.check_win())
     test_2: 2\n
     >>> test_board = TTTBoard()
-    >>> test_board.place(2,7,2)
-    >>> test_board.place(2,8,2)
-    >>> test_board.place(2,9,2)
+    >>> test_board.DoMove(board=2, num=7, player=2)
+    >>> test_board.DoMove(board=2, num=8, player=2)
+    >>> test_board.DoMove(board=2, num=9, player=2)
     >>> print("test_3:", test_board.check_win())
     test_3: 2\n
     Checking vertical
     >>> test_board = TTTBoard()
-    >>> test_board.place(2,1,1)
-    >>> test_board.place(2,4,1)
-    >>> test_board.place(2,7,1)
+    >>> test_board.DoMove(board=2, num=1, player=1)
+    >>> test_board.DoMove(board=2, num=4, player=1)
+    >>> test_board.DoMove(board=2, num=7, player=1)
     >>> print(test_board.check_win())
     1\n
     >>> test_board = TTTBoard()
-    >>> test_board.place(2,2,1)
-    >>> test_board.place(2,5,1)
-    >>> test_board.place(2,8,1)
+    >>> test_board.DoMove(board=2, num=2, player=1)
+    >>> test_board.DoMove(board=2, num=5, player=1)
+    >>> test_board.DoMove(board=2, num=8, player=1)
     >>> print(test_board.check_win())
     1\n
     >>> test_board = TTTBoard()
-    >>> test_board.place(2,3,1)
-    >>> test_board.place(2,6,1)
-    >>> test_board.place(2,9,1)
+    >>> test_board.DoMove(board=2, num=3, player=1)
+    >>> test_board.DoMove(board=2, num=6, player=1)
+    >>> test_board.DoMove(board=2, num=9, player=1)
     >>> print(test_board.check_win())
     1\n
     Checking diag
     >>> test_board = TTTBoard()
-    >>> test_board.place(5,1,2)
-    >>> test_board.place(5,5,2)
-    >>> test_board.place(5,9,2)
+    >>> test_board.DoMove(board=5, num=1, player=2)
+    >>> test_board.DoMove(board=5, num=5, player=2)
+    >>> test_board.DoMove(board=5, num=9, player=2)
     >>> print(test_board.check_win())
     2
     >>> test_board = TTTBoard()
-    >>> test_board.place(5,3,2)
-    >>> test_board.place(5,5,2)
-    >>> test_board.place(5,7,2)
+    >>> test_board.DoMove(board=5, num=3, player=2)
+    >>> test_board.DoMove(board=5, num=5, player=2)
+    >>> test_board.DoMove(board=5, num=7, player=2)
     >>> print(test_board.check_win())
     2
     """
@@ -172,9 +204,9 @@ def test_get_row_col_diag():
      0 0 0 | 0 0 0 | 0 0 0 |
      0 0 0 | 0 0 0 | 0 0 0 |
     >>> test_board = TTTBoard()
-    >>> test_board.place(1, 4, 1)
-    >>> test_board.place(1, 5, 1)
-    >>> test_board.place(1, 9, 2)
+    >>> test_board.DoMove(board=1, num=4, player=1)
+    >>> test_board.DoMove(board=1, num=5, player=1)
+    >>> test_board.DoMove(board=1, num=9, player=2)
     >>> print(test_board.get_rows(1))
     [array([0, 0, 0], dtype=int8), array([1, 1, 0], dtype=int8), array([0, 0, 2], dtype=int8)]
     >>> print(test_board.get_cols(1))
@@ -194,11 +226,11 @@ def test_get_row_col_diag():
      0 0 0 | 0 0 0 | 0 0 0 |
      0 0 0 | 0 0 0 | 0 0 0 |
      0 0 0 | 0 0 0 | 0 0 0 |
-    >>> test_board.place(2, 1, 1)
-    >>> test_board.place(2, 5, 1)
+    >>> test_board.DoMove(board=2, num=1, player=1)
+    >>> test_board.DoMove(board=2, num=5, player=1)
     >>> print(heur_twos(test_board))
     2
-    >>> test_board.place(2, 9, 2)
+    >>> test_board.DoMove(board=2, num=9, player=2)
     >>> print(heur_twos(test_board))
     1
     >>> print(heur_centre(test_board))
@@ -214,14 +246,14 @@ def test_get_row_col_diag():
      0 0 0 | 0 0 0 | 0 0 0 |
      0 0 0 | 0 0 0 | 0 0 0 |
      0 0 0 | 0 0 0 | 0 0 0 |
-    >>> test_board.place(5, 2, 2)
-    >>> test_board.place(5, 5, 2)
-    >>> test_board.place(5, 8, 2)
-    >>> test_board.place(4, 3, 1)
-    >>> test_board.place(4, 6, 1)
-    >>> test_board.place(4, 9, 2)
-    >>> print(heur_twos(test_board, True))
-    [[1, 1], 0]
+    >>> test_board.DoMove(board=5, num=2, player=2)
+    >>> test_board.DoMove(board=5, num=5, player=2)
+    >>> test_board.DoMove(board=5, num=8, player=2)
+    >>> test_board.DoMove(board=4, num=3, player=1)
+    >>> test_board.DoMove(board=4, num=6, player=1)
+    >>> test_board.DoMove(board=4, num=9, player=2)
+    >>> print(heur_twos(test_board))
+    0
     >>> print(heur_centre(test_board))
     1
     """
