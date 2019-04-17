@@ -45,9 +45,9 @@ while True:
 
 # ending
 winner = GAME_BOARD.get_winner()
-if winner == 1:
+if winner == 2:
     print("Lucky break, you won!")
-elif winner == 2:
+elif winner == 1:
     print("You lose. Get better!")
 else:
     print("You didn't lose. Draw!")

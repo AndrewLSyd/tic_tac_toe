@@ -90,7 +90,7 @@ class TTTBoard:
         """ gets the current sub board number [1, 9] """
         return self._current_board
 
-    def get_num_turns(self):
+    def get_turn_counter(self):
         """ returns the number of turns the board has had """
         return self._turn_counter
 
@@ -101,7 +101,7 @@ class TTTBoard:
     def Clone(self):
         """ return copy of the board """
         clone = TTTBoard(np.copy(self._board), self._current_board, self._players_turn,
-                        self.get_num_turns())
+                         self.get_turn_counter())
         clone.playerJustMoved = self.playerJustMoved
         return clone
 
@@ -186,7 +186,7 @@ class TTTBoard:
         child_nodes = []
         for move in self.GetMoves():
             board_clone = self.Clone()  # make copy of board
-            board_clone.DoMove(move)  # DoMove move from valid moves
+            board_clone.DoMove(move)  # place_move move from valid moves
             child_nodes.append(board_clone)  # add to list of nodes
         return child_nodes
 
@@ -194,21 +194,21 @@ class TTTBoard:
 def mc_trial(board, verbose=False):
     """
     This function takes a current board and plays out the board randomly until the end.'
-    2 is returned if player 1 wins, -2 is returned if player 2 wins and 0 if there is
+    2 is returned if player 1 num_wins, -2 is returned if player 2 num_wins and 0 if there is
     a draw.
     """
     move = board.get_rand_legal_move()  # initial move
     outcome = None
 
     while not outcome and move:  # while there is no winner and there is a valid move
-        board.DoMove(move)
+        board.place_move(move)
         move = board.get_rand_legal_move()  # get new move
-        outcome = board.check_win()
+        outcome = board.get_winner()
 
     # scoring
-    if outcome == 1:  # player wins
+    if outcome == 1:  # player num_wins
         score = 1
-    elif outcome == 2:  # opponent wins
+    elif outcome == 2:  # opponent num_wins
         score = -1
     else:
         score = 0  # draw
@@ -221,7 +221,7 @@ def pure_MC(board, num_trials=N_TRIALS):
     """ returns the pure Monte Carlo value of a board """
     score = 0
     for _ in range(num_trials):
-        board_clone = board.Clone()
+        board_clone = board.clone()
         score += mc_trial(board_clone)
     return score
 
@@ -232,7 +232,7 @@ def pure_MC(board, num_trials=N_TRIALS):
  # |_| |_|\___|\__,_|_|  |_|___/\__|_|\___|___/
 def heur_pure_mc(board):
     """ pure Monte Carlo sim heuristic """
-    if board.get_num_turns() < 20:  # to save computation, first few moves just pick random
+    if board.get_turn_counter() < 20:  # to save computation, first few moves just pick random
         return random.randrange(-10, 11)
     return pure_MC(board, 2)
 
@@ -319,10 +319,10 @@ def heur_my_strat(board):
 # choose a move to play
 def final_heuristic(board, heuristic=heur_twos):
     """ returns heuristic estimate of position value from player 1s POV """
-    if board.check_win() == 1:
-        return 1_000_000 - board.get_num_turns()
-    elif board.check_win() == 2:
-        return -1_000_000 + board.get_num_turns()
+    if board.get_winner() == 1:
+        return 1_000_000 - board.get_turn_counter()
+    elif board.get_winner() == 2:
+        return -1_000_000 + board.get_turn_counter()
     else:
         return heuristic(board)
 
@@ -332,7 +332,7 @@ def final_heuristic(board, heuristic=heur_twos):
 
 def minimax(board, depth=3, verbose=False):
     """ minimax without ab pruning. can only seem to get depth 3 with this. """
-    if board.check_win() or depth == 0:
+    if board.get_winner() or depth == 0:
         return final_heuristic(board)
     if board.get_players_turn() == 1:
         alpha = -float("inf")
@@ -354,10 +354,11 @@ def minimax(board, depth=3, verbose=False):
 
 nodes_explored = 0
 
+
 def minimax_ab(board, alpha=-float("inf"), beta=float("inf"), depth=4):
     """ minimax WITH ab pruning. Can get at least depth 4 with pruning"""
     global nodes_explored
-    if board.check_win() or depth == 0:
+    if board.get_winner() or depth == 0:
         return final_heuristic(board)
     if board.get_players_turn() == 1:
         for child in board.get_child_boards():
@@ -377,26 +378,77 @@ def minimax_ab(board, alpha=-float("inf"), beta=float("inf"), depth=4):
         return beta
 
 
+def agent_minimax(board):
+    """ agent that applies minimax
+    input board state
+    returns best move for player 1 """
+    move_values = [ILLEGAL_MOVE] * 9  # illegal moves set to arbitrarily low number
+    for move in board.get_moves():
+        board_clone = board.clone()
+        board_clone.place_move(move)
+        if board.get_turn_counter() < 20:
+            minimax_ab_depth = 4
+        elif board.get_turn_counter() < 30:
+            minimax_ab_depth = 4
+        elif board.get_turn_counter() < 35:
+            minimax_ab_depth = 5
+        elif board.get_turn_counter() < 38:
+            minimax_ab_depth = 6
+        elif board.get_turn_counter() < 40:
+            minimax_ab_depth = 6
+        else:
+            minimax_ab_depth = 7
+        # agent plays here and returns score of all moves
+        move_values[move - 1] = minimax_ab(board_clone, depth=minimax_ab_depth)
+    print("move_values:", move_values)
+
+    # get random max move
+    best_move_value = -float("inf")
+    best_moves_index = []
+
+    for move_index in range(len(move_values)):
+        # if we find a value as big as the current best move
+        if move_values[move_index] == best_move_value:
+            best_moves_index.append(move_index)
+        elif move_values[move_index] > best_move_value:
+            best_moves_index = [move_index]
+            best_move_value = move_values[move_index]
+
+    # choose a random best move
+    move = random.choice(best_moves_index) + 1
+    # print("my move: board", GAME_BOARD.get_curr_board(), ", position", str(move))
+    # GAME_BOARD.place_move(move, player=1)
+    # print(GAME_BOARD)
+    return move
+
+def agent_mcts(board):
+    """
+    :param board: game state
+    :return: best move [1, 0]
+    """
+    iterations = ceil(750 * (1 + 0.02) ** board.get_turn_counter())
+    return UCT(rootstate=board, itermax=iterations, verbose=False)
+
 def play(agent=minimax_ab):
     """ takes an agent and finds the returns the best move """
     # global nodes_explored
     # nodes_explored = 0
     # move_values = [ILLEGAL_MOVE] * 9  # illegal moves set to arbitrarily low number
-    # print('legal moves', game_board.GetMoves())
+    # print('legal moves', GAME_BOARD.get_moves())
     # # find value of all moves
-    # for move in game_board.GetMoves():
-    #     board_clone = game_board.Clone()
-    #     board_clone.DoMove(move)
+    # for move in GAME_BOARD.get_moves():
+    #     board_clone = GAME_BOARD.clone()
+    #     board_clone.place_move(move)
     #     if agent is minimax_ab:
-    #         if game_board.get_num_turns() < 20:
+    #         if GAME_BOARD.get_turn_counter() < 20:
     #             minimax_ab_depth = 4
-    #         elif game_board.get_num_turns() < 30:
+    #         elif GAME_BOARD.get_turn_counter() < 30:
     #             minimax_ab_depth = 4
-    #         elif game_board.get_num_turns() < 35:
+    #         elif GAME_BOARD.get_turn_counter() < 35:
     #             minimax_ab_depth = 5
-    #         elif game_board.get_num_turns() < 38:
+    #         elif GAME_BOARD.get_turn_counter() < 38:
     #             minimax_ab_depth = 6
-    #         elif game_board.get_num_turns() < 40:
+    #         elif GAME_BOARD.get_turn_counter() < 40:
     #             minimax_ab_depth = 6
     #         else:
     #             minimax_ab_depth = 7
@@ -420,26 +472,29 @@ def play(agent=minimax_ab):
     #
     # # choose a random best move
     # move = random.choice(best_moves_index) + 1
-    # print("my move: board", game_board.get_curr_board(), ", position", str(move))
-    # game_board.DoMove(move, player=1)
-    # print(game_board)
+    # print("my move: board", GAME_BOARD.get_curr_board(), ", position", str(move))
+    # GAME_BOARD.place_move(move, player=1)
+    # print(GAME_BOARD)
     # return move
-    iterations = ceil(750 * (1 + 0.02) ** game_board.get_num_turns())
-    # if game_board.get_num_turns() < 20:
-    #     iterations = 750
-    # elif game_board.get_num_turns() < 30:
-    #     iterations = 1000
-    # elif game_board.get_num_turns() < 35:
-    #     iterations = 1500
-    # elif game_board.get_num_turns() < 38:
-    #     iterations = 1750
-    # elif game_board.get_num_turns() < 40:
-    #     iterations = 2000
-    # else:
-    #     iterations = 2500
-    move = UCT(rootstate=game_board, itermax=iterations, verbose=False)
+    # the effective branching factor decreases as the game progresses
+    # so we are able to do more simulations
+
+
+    # iterations = ceil(750 * (1 + 0.02) ** GAME_BOARD.get_turn_counter())
+    # move = UCT(rootstate=GAME_BOARD, itermax=iterations, verbose=False)
+    # print("my move: board", GAME_BOARD.get_curr_board(), ", position", str(move))
+    # GAME_BOARD.place_move(move, player=1)
+    # print(GAME_BOARD)
+
+    if game_board.get_turn_counter() < 15:
+        print("minimax agent used")
+        move = agent_minimax(game_board)
+    else:
+        print("MCTS agent used")
+        move = agent_mcts(game_board)
+
     print("my move: board", game_board.get_curr_board(), ", position", str(move))
-    game_board.DoMove(move, player=1)
+    game_board.DoMove(move)
     print(game_board)
     return move
 
@@ -448,7 +503,7 @@ def play(agent=minimax_ab):
 #                       MONTE CARLO TREE SEARCH                           #
 ###########################################################################
 class Node:
-    """ A node in the game tree. Note wins is always from the viewpoint of playerJustMoved.
+    """ A node in the game tree. Node num_wins is always from the viewpoint of _prev_player.
         Crashes if state not specified.
     """
 
@@ -458,12 +513,12 @@ class Node:
         self.childNodes = []
         self.wins = 0
         self.visits = 0
-        self.untriedMoves = state.GetMoves()  # future child nodes
+        self.untriedMoves = state.get_moves()  # future child nodes
         self.playerJustMoved = state.playerJustMoved  # the only part of the state that the Node needs later
 
     def UCTSelectChild(self):
         """ Use the UCB1 formula to select a child node. Often a constant UCTK is applied so we have
-            lambda c: c.wins/c.visits + UCTK * sqrt(2*log(self.visits)/c.visits to vary the amount of
+            lambda c: c.num_wins/c.num_visits + UCTK * sqrt(2*log(self.num_visits)/c.num_visits to vary the amount of
             exploration versus exploitation.
         """
         s = sorted(self.childNodes, key=lambda c: c.wins / c.visits + sqrt(2 * log(self.visits) / c.visits))[-1]
@@ -479,7 +534,7 @@ class Node:
         return n
 
     def Update(self, result):
-        """ Update this node - one additional visit and result additional wins. result must be from the viewpoint of playerJustmoved.
+        """ update this node - one additional visit and result additional num_wins. result must be from the viewpoint of playerJustmoved.
         """
         self.visits += 1
         self.wins += result
@@ -514,29 +569,31 @@ def UCT(rootstate, itermax, verbose=False):
 
     rootnode = Node(state=rootstate)
 
-    for i in range(itermax):
+    timeout = time.time() + 3
+    # for i in range(itermax):
+    while time.time() < timeout:
         node = rootnode
-        state = rootstate.Clone()
+        state = rootstate.clone()
 
         # Select
         while node.untriedMoves == [] and node.childNodes != []:  # node is fully expanded and non-terminal
             node = node.UCTSelectChild()
-            state.DoMove(node.move)
+            state.place_move(node.move)
 
         # Expand
         if node.untriedMoves != []:  # if we can expand (i.e. state/node is non-terminal)
             m = random.choice(node.untriedMoves)
-            state.DoMove(m)
+            state.place_move(m)
             node = node.AddChild(m, state)  # add child and descend tree
 
         # Rollout - this can often be made orders of magnitude quicker using a state.GetRandomMove() function
-        while state.GetMoves() != []:  # while state is non-terminal
-            state.DoMove(random.choice(state.GetMoves()))
+        while state.get_moves() != []:  # while state is non-terminal
+            state.place_move(random.choice(state.get_moves()))
 
         # Backpropagate
         while node != None:  # backpropagate from the expanded node and work back to the root node
-            node.Update(state.GetResult(
-                node.playerJustMoved))  # state is terminal. Update node with result from POV of node.playerJustMoved
+            node.Update(state.get_curr_players_result(
+                node.playerJustMoved))  # state is terminal. update node with result from POV of node._prev_player
             node = node.parentNode
 
     # Output some information about the tree - can be omitted
@@ -556,7 +613,7 @@ game_board = TTTBoard()
 # read what the server sent us and
 # only parses the strings that are necessary
 def display_turn(board):
-    print("*" * 20 + " move: " + str(board.get_num_turns()) + ", PLAYER " + str(board.get_players_turn()),
+    print("*" * 20 + " move: " + str(board.get_turn_counter()) + ", PLAYER " + str(board.get_players_turn()),
           " nodes explored: ", nodes_explored, "*" * 20)
 
 
@@ -574,11 +631,11 @@ def parse(string):
         display_turn(game_board)
         return play()
     elif command == "third_move":
-        # DoMove the move that was generated for us
+        # place_move the move that was generated for us
         display_turn(game_board)
         game_board.DoMove(int(args[1]), int(args[0]), 1)
         print(game_board)
-        # DoMove computer's last move
+        # place_move computer's last move
         display_turn(game_board)
         game_board.DoMove(int(args[2]), game_board.get_curr_board(), 2)
         print(game_board)
@@ -588,7 +645,7 @@ def parse(string):
         # opponents move
         display_turn(game_board)
         print("opponents move: board -", game_board.get_curr_board(), "position:", str(int(args[0])))
-        game_board.DoMove(int(args[0]), game_board.get_curr_board(), 2) # DoMove opponents move
+        game_board.DoMove(int(args[0]), game_board.get_curr_board(), 2) # place_move opponents move
         print(game_board)
         display_turn(game_board)
         return play()

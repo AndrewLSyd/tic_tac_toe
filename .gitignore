@@ -1,0 +1,12 @@
+
+\.DS_Store
+
+*.zip
+
+src/\.idea/
+
+src/__pycache__/
+
+__pycache__/
+
+\.idea/

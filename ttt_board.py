@@ -14,7 +14,7 @@ class TTTBoard:
         self._current_board = 5
         self._turn_counter = 0
         self._players_turn = 1
-        self.playerJustMoved = 2
+        self._prev_player = 2
 
     def print_board_row(self, a, b, c, i, j, k):
         """ prints a row of the board"""
@@ -80,7 +80,7 @@ class TTTBoard:
         clone._current_board = self._current_board
         clone._players_turn = self._players_turn
         clone._turn_counter = self._turn_counter
-        clone.playerJustMoved = self.playerJustMoved
+        clone.prev_player = self.prev_player
         return clone
 
     def place_move(self, num, board=None, player=None):
@@ -98,10 +98,10 @@ class TTTBoard:
         # change turn
         if player == 1:
             self._players_turn = 2
-            self.playerJustMoved = 1
+            self.prev_player = 1
         elif player == 2:
             self._players_turn = 1
-            self.playerJustMoved = 2
+            self.prev_player = 2
 
         self._turn_counter += 1  # increments turn counter
 
