@@ -525,7 +525,7 @@ class Node:
         return s
 
     def AddChild(self, m, s):
-        """ Remove m from untriedMoves and add a new child node for this move.
+        """ Remove m from _moves_not_tried and add a new child node for this move.
             Return the added child node
         """
         n = Node(move=m, parent=self, state=s)

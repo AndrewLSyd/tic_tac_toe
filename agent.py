@@ -28,7 +28,7 @@ def play():
     """ takes an agent and finds the returns the best move """
     # we use minimax with alpha beta pruning initially a heuristic to get as many
     # 2 in a row/column/diagonals as possible.
-    if GAME_BOARD.get_turn_counter() < 20:
+    if GAME_BOARD.get_turn_counter() < 5:
         print("minimax agent used")
         move = agent_minimax(GAME_BOARD)
     else:
