@@ -117,10 +117,14 @@ class TTTBoard:
 
     def get_rand_legal_move(self):
         """ returns random empty position from current board """
-        empty_pos = self.get_moves()
-        if empty_pos:
-            return random.choice(empty_pos)
+        legal_moves = self.get_moves()
+        if legal_moves:  # if there is a legal move
+            return random.choice(legal_moves)
         return None
+
+    def place_rand_move(self):
+        """ places a random legal move on the board """
+        self.place_move(self.get_rand_legal_move())
 
     def check_win_sub_board(self, board):
         """ returns the winner of a sub board (1 or 2) """

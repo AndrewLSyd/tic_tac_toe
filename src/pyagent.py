@@ -481,7 +481,7 @@ def play(agent=minimax_ab):
 
 
     # iterations = ceil(750 * (1 + 0.02) ** GAME_BOARD.get_turn_counter())
-    # move = UCT(rootstate=GAME_BOARD, itermax=iterations, verbose=False)
+    # move = uct(rootstate=GAME_BOARD, itermax=iterations, verbose=False)
     # print("my move: board", GAME_BOARD.get_curr_board(), ", position", str(move))
     # GAME_BOARD.place_move(move, player=1)
     # print(GAME_BOARD)
@@ -563,7 +563,7 @@ class Node:
 
 
 def UCT(rootstate, itermax, verbose=False):
-    """ Conduct a UCT search for itermax iterations starting from rootstate.
+    """ Conduct a uct search for itermax iterations starting from rootstate.
         Return the best move from the rootstate.
         Assumes 2 alternating players (player 1 starts), with game results in the range [0.0, 1.0]."""
 

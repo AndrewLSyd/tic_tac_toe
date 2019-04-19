@@ -1,8 +1,9 @@
+"""
+Minimax agent with alpha beta pruning
+"""
 from heuristics import *
 import random
 
-N_TRIALS = 200
-DEPTH_FACTOR = 0.8  # increase number of searches at every move by this factor
 ILLEGAL_MOVE = -1_000_000_000  # arbitrarily low number to indicate illegal move
 
 
@@ -47,7 +48,7 @@ def minimax_ab(board, alpha=-float("inf"), beta=float("inf"), depth=4):
 
 
 def agent_minimax(board):
-    """ agent that applies minimax
+    """ agent that applies minimax with AB pruning.
     input board state
     returns best move for player 1 """
     move_values = [ILLEGAL_MOVE] * 9  # illegal moves set to arbitrarily low number

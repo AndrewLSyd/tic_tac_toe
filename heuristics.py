@@ -1,5 +1,6 @@
 import random
 import agent_pure_mc
+from agent_pure_mc import pure_MC
 
 def heur_pure_mc(board):
     """ pure Monte Carlo sim heuristic """
@@ -92,7 +93,6 @@ def final_heuristic(board, heuristic=heur_twos):
     """ returns heuristic estimate of position value from player 1s POV """
     if board.get_winner() == 1:
         return 1_000_000 - board.get_turn_counter()
-    elif board.get_winner() == 2:
+    if board.get_winner() == 2:
         return -1_000_000 + board.get_turn_counter()
-    else:
-        return heuristic(board)
+    return heuristic(board)

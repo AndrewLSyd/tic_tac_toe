@@ -1,4 +1,9 @@
-N_TRIALS = 200
+"""
+Pure Monte Carlo agent for tic tac toe
+"""
+import random
+ILLEGAL_MOVE = -1_000_000_000  # arbitrarily low number to indicate illegal move
+
 
 def mc_trial(board, verbose=False):
     """
@@ -26,10 +31,38 @@ def mc_trial(board, verbose=False):
     return score
 
 
-def pure_MC(board, num_trials=N_TRIALS):
+def pure_MC(board, num_trials=200):
     """ returns the pure Monte Carlo value of a board """
     score = 0
     for _ in range(num_trials):
         board_clone = board.clone()
         score += mc_trial(board_clone)
     return score
+
+
+def agent_pure_mc(board, sim_growth=0.02):
+    """ pure monte carlo agent """
+    move_values = [ILLEGAL_MOVE] * 9  # illegal moves set to arbitrarily low number
+    for move in board.get_moves():
+        board_clone = board.clone()
+        board_clone.place_move(move)
+        num_sims = 750 * (1 + sim_growth) ** board.get_turn_counter()
+        # agent plays here and returns score of all moves
+        move_values[move - 1] = pure_MC(board_clone, num_sims)
+    print("move_values:", move_values)
+
+    # get random max move
+    best_move_value = -float("inf")
+    best_moves_index = []
+
+    for move_index in range(len(move_values)):
+        # if we find a value as big as the current best move
+        if move_values[move_index] == best_move_value:
+            best_moves_index.append(move_index)
+        elif move_values[move_index] > best_move_value:
+            best_moves_index = [move_index]
+            best_move_value = move_values[move_index]
+
+    # choose a random best move
+    move = random.choice(best_moves_index) + 1
+    return move

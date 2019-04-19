@@ -7,8 +7,8 @@ from pyagent import TTTBoard, mc_trial, pure_MC, final_heuristic, heur_twos, heu
 test_board = TTTBoard()
 
 def UCTPlayGame():
-    """ Play a sample game between two UCT players where each player gets a different number
-        of UCT iterations (= simulations = tree nodes).
+    """ Play a sample game between two uct players where each player gets a different number
+        of uct iterations (= simulations = tree nodes).
     """
     state = test_board
     while (state.get_moves() != []):
