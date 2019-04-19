@@ -64,14 +64,20 @@
 #
 # *** Step 6: Trying Monte Carlo Tree Search ***
 # I am still not able to consistently beat the lookt opponent with a depth of greater than
-# 3. My next attempt was to use
+# 3. My next attempt was to use a Monte Carlo Tree Search. This approach has a few
+# advantages: we do not need a heuristic (it's not the easiest to come up with a heuristic
+# for this game) and the algorithm can be stopped at anytime and the best estimate so far
+# can be returned. This is useful for this assignment due to the "chess clock" time
+# constraint of this assignment.
 
 # *** Future development ideas ***
 # At this stage what is holding back my agent is the efficiency of the code. I am only
 # able to MiniMax search at a depth of 4 initially, and ~6 after 30 moves. Some
 # profiling should be done to see where the bottlenecks are. Python was chosen for its
 # readability and ease of programming, but perhaps after I make my algorithms and data
-# structures more efficient, I could consider implementing in say C.
+# structures more efficient, I could consider implementing in say C. If I had more time
+# I would write code to simulate games to more objectively select algorithms and tune
+# parameters. For example the exploration parameter in the MTCS could be tuned.
 
 
 import socket

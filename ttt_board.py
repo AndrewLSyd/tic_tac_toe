@@ -74,13 +74,17 @@ class TTTBoard:
         """ returns current player (1 or 2) """
         return self._players_turn
 
+    def get_prev_player(self):
+        """ returns previous player """
+        return self._prev_player
+
     def clone(self):
         """ return copy of the board """
         clone = TTTBoard(np.copy(self._board))
         clone._current_board = self._current_board
         clone._players_turn = self._players_turn
         clone._turn_counter = self._turn_counter
-        clone.prev_player = self.prev_player
+        clone._prev_player = self._prev_player
         return clone
 
     def place_move(self, num, board=None, player=None):
@@ -98,10 +102,10 @@ class TTTBoard:
         # change turn
         if player == 1:
             self._players_turn = 2
-            self.prev_player = 1
+            self._prev_player = 1
         elif player == 2:
             self._players_turn = 1
-            self.prev_player = 2
+            self._prev_player = 2
 
         self._turn_counter += 1  # increments turn counter
 
@@ -125,6 +129,11 @@ class TTTBoard:
     def place_rand_move(self):
         """ places a random legal move on the board """
         self.place_move(self.get_rand_legal_move())
+
+    def rollout(self):
+        """ plays random move until a terminal state (rollout) """
+        while self.get_moves() != []:
+            self.place_rand_move()
 
     def check_win_sub_board(self, board):
         """ returns the winner of a sub board (1 or 2) """
