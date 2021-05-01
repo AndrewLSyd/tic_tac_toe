@@ -68,16 +68,21 @@
 # advantages: we do not need a heuristic (it's not the easiest to come up with a heuristic
 # for this game) and the algorithm can be stopped at anytime and the best estimate so far
 # can be returned. This is useful for this assignment due to the "chess clock" time
-# constraint of this assignment.
+# constraint of this assignment. This approach seemed to perform a little better than the
+# MiniMax with alpha beta pruning. In the end, the agent I have adopted uses a MiniMax
+# search with alpha beta pruning for the initial moves, trying to get as many "almost
+# wins" (2 out of 3 in a row/column or diagonal) as a heuristic, before switching to a
+# MCTS with a time limit.
 
 # *** Future development ideas ***
 # At this stage what is holding back my agent is the efficiency of the code. I am only
 # able to MiniMax search at a depth of 4 initially, and ~6 after 30 moves. Some
 # profiling should be done to see where the bottlenecks are. Python was chosen for its
 # readability and ease of programming, but perhaps after I make my algorithms and data
-# structures more efficient, I could consider implementing in say C. If I had more time
-# I would write code to simulate games to more objectively select algorithms and tune
-# parameters. For example the exploration parameter in the MTCS could be tuned.
+# structures more efficient, I could consider implementing in a more low level language
+# like C. If I had more time I would write code to simulate games to more objectively
+# select algorithms and tune parameters. For example the exploration parameter in the
+# MTCS could be tuned.
 
 
 import socket
@@ -120,11 +125,13 @@ def play():
 # read what the server sent us and
 # only parses the strings that are necessary
 def display_turn(board):
-    print("*" * 10 + " move: " + str(board.get_turn_counter()) + ", PLAYER " + str(board.get_players_turn()),
-          " nodes explored: ", "*" * 10)
+    """ displays a text summary of the turn """
+    print("*" * 10 + " move: " + str(board.get_turn_counter()) + ", PLAYER "
+          + str(board.get_players_turn()), " nodes explored: ", "*" * 10)
 
 
 def parse(string):
+    """ parses text received through the socket and plays the game """
     if "(" in string:
         command, args = string.split("(")
         args = args.split(")")[0]
@@ -137,7 +144,7 @@ def parse(string):
         print(GAME_BOARD)
         display_turn(GAME_BOARD)
         return play()
-    elif command == "third_move":
+    if command == "third_move":
         # place_move the move that was generated for us
         display_turn(GAME_BOARD)
         GAME_BOARD.place_move(int(args[1]), int(args[0]), 1)
@@ -148,42 +155,44 @@ def parse(string):
         print(GAME_BOARD)
         display_turn(GAME_BOARD)
         return play()
-    elif command == "next_move":
+    if command == "next_move":
         # opponents move
         display_turn(GAME_BOARD)
-        print("opponents move: board -", GAME_BOARD.get_curr_board(), "position:", str(int(args[0])))
-        GAME_BOARD.place_move(int(args[0]), GAME_BOARD.get_curr_board(), 2) # place_move opponents move
+        print("opponents move: board -", GAME_BOARD.get_curr_board(), "position:",
+              str(int(args[0])))
+        # place_move opponents move
+        GAME_BOARD.place_move(int(args[0]), GAME_BOARD.get_curr_board(), 2)
         print(GAME_BOARD)
         display_turn(GAME_BOARD)
         return play()
-    elif command == "win":
+    if command == "win":
         print("Yay!! We win!! 🏆")
         print(GAME_BOARD)
         return -1
-    elif command == "loss":
+    if command == "loss":
         print("😫 We lost")
         print(GAME_BOARD)
         return -1
     return 0
 
 
-# connect to socket
 def main():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    """ connection to socket """
+    my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     port = int(sys.argv[2]) # Usage: ./agent.py -p (port)
 
-    s.connect(('localhost', port))
+    my_socket.connect(('localhost', port))
     while True:
-        text = s.recv(1024).decode()
+        text = my_socket.recv(1024).decode()
         if not text:
             continue
         for line in text.split("\n"):
             response = parse(line)
             if response == -1:
-                s.close()
+                my_socket.close()
                 return
-            elif response > 0:
-                s.sendall((str(response) + "\n").encode())
+            if response > 0:
+                my_socket.sendall((str(response) + "\n").encode())
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 """
 Minimax agent with alpha beta pruning
 """
-from heuristics import *
 import random
+from heuristics import *
+
 
 ILLEGAL_MOVE = -1_000_000_000  # arbitrarily low number to indicate illegal move
 

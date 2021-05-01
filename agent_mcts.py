@@ -100,23 +100,28 @@ def agent_mcts(board, time_limit=1):
 
         # Step 1: Selection
         # whilst it is a not a terminal node and the node as no more expansions possible
-        while not node.get_moves_not_tried() and node.get_children():
+        while node.get_moves_not_tried() == [] and node.get_children() != []:
             node = node.choose_child_uct()  # select and set node based on UCT formula
             state.place_move(node.get_move())
 
         # Step 2: Expansion
-        if not node.get_moves_not_tried():  # if we can expand (i.e. state/node is non-terminal)
-            m = random.choice(node.get_moves_not_tried())
-            state.place_move(m)
-            node = node.child_add(m, state)  # add child and descend tree
+        # if the state is not terminal, we can still expand
+        if node.get_moves_not_tried() != []:
+            # choose a random move from moves we have not tried
+            move = random.choice(node.get_moves_not_tried())
+            state.place_move(move)
+            node = node.child_add(move, state)
 
         # Step 3: Simulation
         state.rollout()
 
-        # Step 4: Back-propagate
-        while node is not None:  # backpropagate from the expanded node and work back to the root node
-            node.update(state.get_curr_players_result(
-                node.get_prev_player()))  # state is terminal. update node with result from POV of node._prev_player
+        # Step 4: Back-propagate from the node back to the root
+        while node is not None:
+            # update current node with other player's result
+            node.update(state.get_curr_players_result(node.get_prev_player()))
+            # work our way back up parent by parent back to the root
             node = node.get_parent()
 
-    return sorted(root.get_children(), key=lambda child: child.get_visits())[-1].get_move()  # return the move that was most visited
+    # return the move that was most visited
+    selected_move = sorted(root.get_children(), key=lambda child: child.get_visits())[-1].get_move()
+    return selected_move
