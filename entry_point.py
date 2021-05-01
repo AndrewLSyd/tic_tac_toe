@@ -13,6 +13,7 @@ while True:
         break
 
 # initial random move
+print("Robotossin is impatient and goes first...")
 GAME_BOARD.place_move(random.randrange(1, 10))
 print("current board:", GAME_BOARD.get_curr_board())
 print(GAME_BOARD)
@@ -21,10 +22,12 @@ print(GAME_BOARD)
 while True:
     # players turn
     while True:
-        move = int(input("Current sub-board is " + str(GAME_BOARD.get_curr_board()) + ". Enter a move: "))
-        if move not in GAME_BOARD.get_moves():
-            move = int(input("Illegal move. Enter move: "))
+        move = input("Boards and pieces are labelled 1 to 9 from left to right, top to bottom. Current sub-board is " + str(GAME_BOARD.get_curr_board()) + ". You are player 2. Enter a move: ")
+        if (move not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]) or (int(move) not in GAME_BOARD.get_moves()):
+            print("Illegal move. Enter an integer between 1 and 9 in a position not already taken.")
+            next
         else:
+            move = int(move)  # cast to int
             break
     print("Player move: board", GAME_BOARD.get_curr_board(), "position", move)
     GAME_BOARD.place_move(move)
